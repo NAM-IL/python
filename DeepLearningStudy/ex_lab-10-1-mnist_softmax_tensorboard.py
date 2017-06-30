@@ -7,9 +7,8 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 import tensorflow as tf
 import random
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 from tensorflow.examples.tutorials.mnist import input_data
-
 tf.set_random_seed(777)  # reproducibility
 
 mnist = input_data.read_data_sets("MNIST_data/", one_hot=True)
@@ -17,52 +16,28 @@ mnist = input_data.read_data_sets("MNIST_data/", one_hot=True)
 # more information about the mnist dataset
 
 # parameters
-learning_rate = 0.01
+learning_rate = 0.001
 training_epochs = 15
 batch_size = 100
-
 
 # input place holders
 X = tf.placeholder(tf.float32, [None, 784])
 Y = tf.placeholder(tf.float32, [None, 10])
 
-with tf.variable_scope('layer1') as scope:
-    # weights & bias for nn layers
-    W = tf.Variable(tf.random_normal([784, 10]))
-    b = tf.Variable(tf.random_normal([10]))
-    
-    hypothesis = tf.matmul(X, W) + b
-    
-    x_image = tf.reshape(X, [-1, 28, 28, 1])
-    
-    tf.summary.image('input', x_image, 3)
-    w1_hist = tf.summary.histogram("weights", W)
-    b1_hist = tf.summary.histogram("biases", b)
-    hypothesis_hist = tf.summary.histogram("hypothesis", hypothesis)
+# weights & bias for nn layers
+W = tf.Variable(tf.random_normal([784, 10]))
+b = tf.Variable(tf.random_normal([10]))
 
+hypothesis = tf.matmul(X, W) + b
 
 # define cost/loss & optimizer
-with tf.name_scope("cost") as scope:
-    cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(
-        logits=hypothesis, labels=Y))
-   
-    cost_summ = tf.summary.scalar("cost", cost)
-   
-with tf.name_scope("train") as scope:
-    optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(cost)
+cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(
+    logits=hypothesis, labels=Y))
+optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(cost)
 
-
-    
 # initialize
 sess = tf.Session()
-
-merged_summary = tf.summary.merge_all()
-writer = tf.summary.FileWriter("./logs/mnist_softmax_0_01")
-writer.add_graph(sess.graph)  # Show the graph
-
 sess.run(tf.global_variables_initializer())
-
-global_step = 0
 
 # train my model
 for epoch in range(training_epochs):
@@ -72,11 +47,9 @@ for epoch in range(training_epochs):
     for i in range(total_batch):
         batch_xs, batch_ys = mnist.train.next_batch(batch_size)
         feed_dict = {X: batch_xs, Y: batch_ys}
-        summary, c, _ = sess.run([merged_summary, cost, optimizer], feed_dict=feed_dict)
+        c, _ = sess.run([cost, optimizer], feed_dict=feed_dict)
         avg_cost += c / total_batch
-        writer.add_summary(summary, global_step=global_step)
-        global_step += 1
-        
+
     print('Epoch:', '%04d' % (epoch + 1), 'cost =', '{:.9f}'.format(avg_cost))
 
 print('Learning Finished!')
@@ -90,12 +63,12 @@ print('Accuracy:', sess.run(accuracy, feed_dict={
 # Get one and predict
 r = random.randint(0, mnist.test.num_examples - 1)
 print("Label: ", sess.run(tf.argmax(mnist.test.labels[r:r + 1], 1)))
-print("Prediction: ", sess.run(tf.argmax(hypothesis, 1), 
-                               feed_dict={X: mnist.test.images[r:r + 1]}))
+print("Prediction: ", sess.run(
+    tf.argmax(hypothesis, 1), feed_dict={X: mnist.test.images[r:r + 1]}))
 
-plt.imshow(mnist.test.images[r:r + 1].reshape(28, 28), 
-           cmap='Greys', interpolation='nearest')
-plt.show()
+# plt.imshow(mnist.test.images[r:r + 1].
+#           reshape(28, 28), cmap='Greys', interpolation='nearest')
+# plt.show()
 
 '''
 Epoch: 0001 cost = 5.888845987
